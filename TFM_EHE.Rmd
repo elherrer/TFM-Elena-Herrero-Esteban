@@ -1,0 +1,1589 @@
+---
+title: "TFM"
+author: "Elena Herrero Esteban"
+date: '`r format(Sys.Date(),"%e de %B, %Y")`'
+output:
+  pdf_document: 
+    toc: yes
+    toc_depth: 4
+  html_document:
+    toc: yes
+    df_print: paged
+params:
+  folder.data: ./
+  p.train: 0.7
+  valor.seed: 123
+---
+
+# CARGA DE DATOS
+
+```{r}
+library(readxl)
+anfibiosdef <- read_excel("anfibiosdef.xlsx")
+```
+
+En primer lugar redondeo las variables de la base de datos:
+
+```{r}
+anfibiosdef$orilla<-round(anfibiosdef$orilla)
+anfibiosdef$altitud<-round(anfibiosdef$altitud)
+anfibiosdef$BIO1<-round(anfibiosdef$BIO1)
+anfibiosdef$BIO2<-round(anfibiosdef$BIO2)
+anfibiosdef$BIO3<-round(anfibiosdef$BIO3)
+anfibiosdef$BIO4<-round(anfibiosdef$BIO4)
+anfibiosdef$BIO5<-round(anfibiosdef$BIO5)
+anfibiosdef$BIO6<-round(anfibiosdef$BIO6)
+anfibiosdef$BIO7<-round(anfibiosdef$BIO7)
+anfibiosdef$BIO8<-round(anfibiosdef$BIO8)
+anfibiosdef$BIO9<-round(anfibiosdef$BIO9)
+anfibiosdef$BIO10<-round(anfibiosdef$BIO10)
+anfibiosdef$BIO11<-round(anfibiosdef$BIO11)
+anfibiosdef$BIO12<-round(anfibiosdef$BIO12)
+anfibiosdef$BIO13<-round(anfibiosdef$BIO13)
+anfibiosdef$BIO14<-round(anfibiosdef$BIO14)
+anfibiosdef$BIO15<-round(anfibiosdef$BIO15)
+anfibiosdef$BIO16<-round(anfibiosdef$BIO16)
+anfibiosdef$BIO17<-round(anfibiosdef$BIO17)
+anfibiosdef$BIO18<-round(anfibiosdef$BIO18)
+anfibiosdef$BIO19<-round(anfibiosdef$BIO19)
+anfibiosdef$footprint<-round(anfibiosdef$footprint)
+attach(anfibiosdef)
+```
+
+# EDA o ANÁLISIS EXPLORATORIO DE DATOS
+
+## Exploración base de datos
+
+```{r}
+str(anfibiosdef)
+```
+
+La base de datos está constituida por 24 variables, riqueza es cuantitativa discreta y las demás son cuantitativas continuas.
+
+```{r}
+head(anfibiosdef)
+```
+
+## Preprocesado: eliminar NA
+
+```{r}
+library(DataExplorer)
+introduce(anfibiosdef)
+```
+
+La base de datos está constituida por 4717 filas, de las cuales están completas 4683 con un total de 609 valores perdidos.
+
+```{r}
+plot_intro(anfibiosdef)
+```
+
+El 99'28% de las filas estan completas, hay un 0'54% de observaciones faltantes o valores nulos (NA).
+
+El siguiente gráfico muestra el porcentaje de valores perdidos en cada fila:
+
+```{r}
+plot_missing(anfibiosdef)
+```
+
+Elimino los valores nulos para trabajar con filas completas:
+
+```{r}
+library(tidyverse)
+anfibiosdef<-drop_na(anfibiosdef)
+introduce(anfibiosdef)
+```
+
+Creo nueva base de datos eliminando las etiquetas que únicamente me sirven para asociar a cada dato unas coordenadas geográficas para la representación del mapa, pero no es una variable necesaria para los análisis estadísticos.
+
+```{r}
+library(dplyr)
+cuant<-dplyr::select(anfibiosdef,-etiquetas)
+```
+
+```{r}
+attach(cuant)
+```
+
+*attach* crea un entorno en la ruta de búsqueda (search path) y en él copia los elementos de la lista o columnas del data frame. El search path es la ruta que R seguirá en la búsqueda de objetos y variables. El orden es importante: si el objeto lo encuentra en un entorno, no pasará al siguiente. Con attach, hacemos accesible para R ese data frame, y será posible referirse a sus variables directamente sin especificar el nombre del data frame.
+
+
+## Análisis Univariado
+
+```{r}
+library(ggplot2)
+```
+
++ **Riqueza**
+
+```{r}
+g1<-ggplot(data = cuant) + geom_bar(fill="tan1", colour="black", mapping = aes(x = riqueza)) + scale_x_continuous(breaks = seq(0, 12, 1)) + theme_classic()
+```
+
++ **Orilla**
+
+```{r}
+g2<-ggplot(cuant, aes(x = orilla)) + geom_histogram(fill="red", colour="black", bins=100) + scale_y_continuous(breaks = seq(0, 1000, 200)) + scale_x_continuous(breaks = seq(0, 26000, 4000), name="Orilla") + theme_classic()
+```
+
++ **Altitud**
+
+```{r}
+g3<-ggplot(cuant, aes(x = altitud)) + geom_histogram(fill="lightsalmon", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,1000,100)) + scale_x_continuous(breaks = seq(0, 3000, 500), name="Altitud") + theme_classic()
+```
+
++ **Footprint**
+
+```{r}
+g4<-ggplot(cuant, aes(x = footprint)) + geom_histogram(fill="pink", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,5000,1000)) + scale_x_continuous(breaks = seq(0, 10000, 5000), name="Footprint") + theme_classic()
+```
+
++ **Variables de temperatura**
+
+```{r}
+g5<-ggplot(cuant, aes(x = BIO1)) + geom_histogram(fill="skyblue", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,200,50)) + scale_x_continuous(breaks = seq(0, 200, 50), name="BIO1") + theme_classic()
+```
+
+```{r}
+g6<-ggplot(cuant, aes(x = BIO2)) + geom_histogram(fill="skyblue1", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,200,50)) + scale_x_continuous(breaks = seq(0, 160, 20), name="BIO2") + theme_classic()
+```
+
+```{r}
+g7<-ggplot(cuant, aes(x = BIO3)) + geom_histogram(fill="skyblue2", colour="black", bins=10) + scale_y_continuous(breaks = seq(0,3000,500)) + scale_x_continuous(breaks = seq(0, 60, 10), name="BIO3") + theme_classic()
+```
+
+```{r}
+g8<-ggplot(cuant, aes(x = BIO4)) + geom_histogram(fill="skyblue3", colour="black", bins=10) + scale_y_continuous(breaks = seq(0,1000,200)) + scale_x_continuous(breaks = seq(0, 80, 20), name="BIO4") + theme_classic()
+```
+
+```{r}
+g9<-ggplot(cuant, aes(x = BIO5)) + geom_histogram(fill="skyblue4", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,2000,200)) + scale_x_continuous(breaks = seq(0, 200, 50), name="BIO5") + theme_classic()
+```
+
+```{r}
+g10<-ggplot(cuant, aes(x = BIO6)) + geom_histogram(fill="slategray", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,2000,200)) + scale_x_continuous(breaks = seq(0, 100, 20), name="BIO6") + theme_classic()
+```
+
+```{r}
+g11<-ggplot(cuant, aes(x = BIO7)) + geom_histogram(fill="slategray1", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,200,50)) + scale_x_continuous(breaks = seq(0, 1000, 20), name="BIO7") + theme_classic()
+```
+
+```{r}
+g12<-ggplot(cuant, aes(x = BIO8)) + geom_histogram(fill="slategray2", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,200,50)) + scale_x_continuous(breaks = seq(0, 1000, 50), name="BIO8") + theme_classic()
+```
+
+```{r}
+g13<-ggplot(cuant, aes(x = BIO9)) + geom_histogram(fill="slategray3", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,400,50)) + scale_x_continuous(breaks = seq(0, 300, 50), name="BIO9") + theme_classic()
+```
+
+```{r}
+g14<-ggplot(cuant, aes(x = BIO10)) + geom_histogram(fill="slategray4", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,400,50)) + scale_x_continuous(breaks = seq(0, 300, 50), name="BIO10") + theme_classic()
+```
+
+```{r}
+g15<-ggplot(cuant, aes(x = BIO11)) + geom_histogram(fill="steelblue", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,400,50)) + scale_x_continuous(breaks = seq(0, 300, 50), name="BIO11") + theme_classic()
+```
+
++ **Variables de precipitaciones**
+
+```{r}
+g16<-ggplot(cuant, aes(x = BIO12)) + geom_histogram(fill="limegreen", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,400,50)) + scale_x_continuous(breaks = seq(0, 1600, 200), name="BIO12") + theme_classic()
+```
+
+```{r}
+g17<-ggplot(cuant, aes(x = BIO13)) + geom_histogram(fill="olivedrab", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,400,50)) + scale_x_continuous(breaks = seq(0, 300, 50), name="BIO13") + theme_classic()
+```
+
+```{r}
+g18<-ggplot(cuant, aes(x = BIO14)) + geom_histogram(fill="olivedrab1", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,400,100)) + scale_x_continuous(breaks = seq(0, 100, 20), name="BIO14") + theme_classic()
+```
+
+```{r}
+g19<-ggplot(cuant, aes(x = BIO15)) + geom_histogram(fill="olivedrab2", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,500,50)) + scale_x_continuous(breaks = seq(0, 7500, 500), name="BIO15") + theme_classic()
+```
+
+```{r}
+g20<-ggplot(cuant, aes(x = BIO16)) + geom_histogram(fill="olivedrab3", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,500,50)) + scale_x_continuous(breaks = seq(0, 7500, 500), name="BIO16") + theme_classic()
+```
+
+```{r}
+g21<-ggplot(cuant, aes(x = BIO17)) + geom_histogram(fill="olivedrab4", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,300,100)) + scale_x_continuous(breaks = seq(0, 350, 50), name="BIO17") + theme_classic()
+```
+
+```{r}
+g22<-ggplot(cuant, aes(x = BIO18)) + geom_histogram(fill="yellowgreen", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,300,100)) + scale_x_continuous(breaks = seq(0, 350, 50), name="BIO18") + theme_classic()
+```
+
+```{r}
+g23<-ggplot(cuant, aes(x = BIO19)) + geom_histogram(fill="yellowgreen", colour="black", bins=100) + scale_y_continuous(breaks = seq(0,800,200)) + scale_x_continuous(breaks = seq(0, 800, 50), name="BIO19") + theme_classic()
+```
+
+```{r}
+library(gridExtra)
+grid.arrange(g1,g2,g3,g4,nrow=2)
+grid.arrange(g5,g6,g7,g8,g9,g10,g11,g12,g13,g14,g15,nrow=6) #temperaturas
+grid.arrange(g16,g17,g18,g19,g20,g21,g22,g23,nrow=4) #precipitaciones
+```
+
+La libreria *psych* es útil para representar histogramas de todas las variables pero en este caso no me sirve porque la escala no es buena y no representa las variables climáticas.
+
+```{r}
+#library(psych)
+#multi.hist(x = cuant, dcol = c("blue", "red"), dlty = c("dotted", "solid"))
+```
+
+Con *boxplots* podemos ver los *outliers*:
+
+```{r}
+par(mfrow=c(2,2))
+boxplot(orilla,main="Boxplot orilla",col="red")
+boxplot(altitud,main="Boxplot altitud",col="lightsalmon")
+par(mfrow=c(2,2))
+boxplot(footprint,main="Boxplot footprint",col="pink")
+boxplot(BIO1,main="Boxplot BIO1",col="skyblue")
+par(mfrow=c(2,2))
+boxplot(BIO2,main="Boxplot BIO2",col="skyblue1")
+boxplot(BIO3,main="Boxplot BIO3",col="skyblue2")
+par(mfrow=c(2,2))
+boxplot(BIO4,main="Boxplot BIO4",col="skyblue3")
+boxplot(BIO5,main="Boxplot BIO5",col="skyblue4")
+par(mfrow=c(2,2))
+boxplot(BIO6,main="Boxplot BIO6",col="slategray")
+boxplot(BIO7,main="Boxplot BIO7",col="slategray1")
+par(mfrow=c(2,2))
+boxplot(BIO8,main="Boxplot BIO8",col="slategray2")
+boxplot(BIO9,main="Boxplot BIO9",col="slategray3")
+par(mfrow=c(2,2))
+boxplot(BIO10,main="Boxplot BIO10",col="slategray4")
+boxplot(BIO11,main="Boxplot BIO11",col="steelblue")
+par(mfrow=c(2,2))
+boxplot(BIO12,main="Boxplot BIO12",col="limegreen")
+boxplot(BIO13,main="Boxplot BIO13",col="olivedrab")
+par(mfrow=c(2,2))
+boxplot(BIO14,main="Boxplot BIO14",col="olivedrab1")
+boxplot(BIO15,main="Boxplot BIO15",col="olivedrab2")
+par(mfrow=c(2,2))
+boxplot(BIO16,main="Boxplot BIO16",col="olivedrab3")
+boxplot(BIO17,main="Boxplot BIO17",col="olivedrab4")
+par(mfrow=c(2,2))
+boxplot(BIO18,main="Boxplot BIO18",col="yellowgreen")
+boxplot(BIO19,main="Boxplot BIO19",col="yellowgreen")
+par(mfrow=c(1,1))
+boxplot(riqueza,main="Boxplot riqueza",col="tan1")
+```
+
+Al usar la libreria GGally con la función ggpairs de las 23 variables, el gráfico resultante no es muy claro, por lo que he hecho subgrupos de variables: orilla, altitud y footprint por un lado, por otro las variables de temperatura (BIO1 a BIO11) y precipitación por otro (BIO12 a BIO19), manteniendo en todos la variable respuesta riqueza. 
+
+```{r}
+library(dplyr)
+
+a<-dplyr::select(cuant,-orilla,-altitud,-footprint,-BIO12,-BIO13,-BIO14,-BIO15,-BIO16,-BIO17,-BIO18,-BIO19) #temperatura
+
+b<-dplyr::select(cuant,-BIO1,-BIO2,-BIO3,-BIO4,-BIO5,-BIO6,-BIO7,-BIO8,-BIO9,-BIO10,-BIO11,-BIO12,-BIO13,-BIO14,-BIO15,-BIO16,-BIO17,-BIO18,-BIO19)
+
+c<-dplyr::select(cuant,-orilla,-altitud,-footprint,-BIO1,-BIO2,-BIO3,-BIO4,-BIO5,-BIO6,-BIO7,-BIO8,-BIO9,-BIO10,-BIO11) #precipitaciones
+```
+
+```{r}
+library(GGally)
+ggpairs(a, lower = list(continuous = "smooth"),
+        diag = list(continuous = "barDiag"), axisLabels = "none")
+```
+
+
+```{r}
+ggpairs(b, lower = list(continuous = "smooth"),
+        diag = list(continuous = "barDiag"), axisLabels = "none")
+```
+
+```{r}
+ggpairs(c, lower = list(continuous = "smooth"),
+        diag = list(continuous = "barDiag"), axisLabels = "none")
+```
+
+
+### Estadísticas descriptivas de las variables
+
+```{r}
+summary(cuant)
+```
+
+Con la siguente función obtenemos estadísticas descriptivas más extensas: : número de observaciones excluyendo los valores perdidos, número de valores perdidos, media aritmética, Desviación Estándar, media del error estándar IQR (rango intercuartílico (Q3-Q1)), sesgo, curtosis y varios percentiles.
+
+```{r}
+library(dlookr)
+describe<-describe(cuant)
+```
+
+```{r}
+#para exportar una tabla a word
+library(knitr)
+library(kableExtra)
+describe %>%
+
+            kbl(caption = "") %>%
+
+            kable_classic(full_width = F, html_font = "Arial")
+```
+
+
+### Prueba de normalidad sobre variables numéricas
+
+Estudio la normalidad de las variables mediante el test Shapiro-Wilk.
+
+```{r}
+normalidad<-normality(cuant)
+#exportar tabla a word
+library(knitr)
+library(kableExtra)
+normalidad %>%
+
+            kbl(caption = "") %>%
+
+            kable_classic(full_width = F, html_font = "Arial")
+```
+
+Los p-valores son significativos, todas las variables se ajustan a una normal.
+
+## Análisis Bivariado
+
+```{r}
+# Visualización de las variables respecto a riqueza
+cuant<-as.data.frame(cuant)
+plotY <- function (x,y) {
+  plot(cuant[,y]~cuant[,x], xlab=paste(names(cuant)[x]," X",x,sep=""), ylab=names(cuant)[y])
+  }
+par(mfrow=c(2,2)) 
+x <- sapply(1:(dim(cuant)[2]-1), plotY, dim(cuant)[2])
+par(mfrow=c(1,1))
+```
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+```
+
+```{r}
+p20<-ggplot(cuant)  + 
+  geom_point(aes(x = riqueza, y = altitud)) + theme_classic()
+p21<-ggplot(cuant)  + 
+  geom_point(aes(x = riqueza, y = orilla)) + theme_classic()
+p22<-ggplot(cuant)  + 
+  geom_point(aes(x = riqueza, y = footprint)) + theme_classic()
+grid.arrange(p20,p21,p22)
+```
+
+**Riqueza vs variables de temperatura**:
+
+```{r}
+p1<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO1)) + theme_classic()
+p2<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO2)) + theme_classic()
+p3<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO3)) + theme_classic()
+p4<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO4)) + theme_classic()
+p5<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO5)) + theme_classic()
+p6<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO6)) + theme_classic()
+p7<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO7)) + theme_classic()
+p8<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO8)) + theme_classic()
+p9<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO9)) + theme_classic()
+p10<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO10)) + theme_classic()
+p11<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO11)) + theme_classic()
+```
+
+```{r}
+grid.arrange(p1,p2,p3,p4)
+grid.arrange(p5,p6,p7,p8)
+grid.arrange(p9,p10,p11)
+```
+
+**Riqueza vs variables de precipitación**:
+
+```{r}
+p12<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO12)) + theme_classic()
+p13<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO13)) + theme_classic()
+p14<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO14)) + theme_classic()
+p15<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO15)) + theme_classic()
+p16<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO16)) + theme_classic()
+p17<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO17)) + theme_classic()
+p18<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO18)) + theme_classic()
+p19<-ggplot(cuant)  + geom_point(aes(x = riqueza, y = BIO19)) + theme_classic()
+
+```
+
+```{r}
+grid.arrange(p12,p13,p14,p15)
+grid.arrange(p16,p17,p18,p19)
+```
+
+Los **diagramas de cajas y bigotes**, según donde caiga la media, nos permiten saber si la relación es directamente significativa. Si la media de una de las categorias cae fuera de la desviación estándar de otra caja, existen diferencias significativas.
+
+```{r}
+b20 <- ggplot(cuant, aes(x=factor(riqueza), y=altitud)) + geom_boxplot(fill="lightsalmon") + theme_classic() + xlab("Riqueza")
+b21 <- ggplot(cuant, aes(x=factor(riqueza), y=orilla)) + geom_boxplot(fill="red") + theme_classic() + xlab("Riqueza")
+b22 <- ggplot(cuant, aes(x=factor(riqueza), y=footprint)) + geom_boxplot(fill="pink") + theme_classic() + xlab("Riqueza")
+```
+
+```{r}
+grid.arrange(b20,b21,b22)
+```
+
+```{r}
+b1 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO1)) + geom_boxplot(fill="skyblue") + theme_classic() + xlab("Riqueza")
+b2 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO2)) + geom_boxplot(fill="skyblue1") + theme_classic() + xlab("Riqueza")
+b3 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO3)) + geom_boxplot(fill="skyblue2") + theme_classic() + xlab("Riqueza")
+b4 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO4)) + geom_boxplot(fill="skyblue3") + theme_classic() + xlab("Riqueza")
+b5 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO5)) + geom_boxplot(fill="skyblue4") + theme_classic() + xlab("Riqueza")
+b6 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO6)) + geom_boxplot(fill="slategray") + theme_classic() + xlab("Riqueza")
+b7 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO7)) + geom_boxplot(fill="slategray1") + theme_classic() + xlab("Riqueza")
+b8 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO8)) + geom_boxplot(fill="slategray2") + theme_classic() + xlab("Riqueza")
+b9 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO9)) + geom_boxplot(fill="slategray3") + theme_classic() + xlab("Riqueza")
+b10 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO10)) + geom_boxplot(fill="slategray4") + theme_classic() + xlab("Riqueza")
+b11 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO11)) + geom_boxplot(fill="steelblue") + theme_classic() + xlab("Riqueza")
+```
+
+```{r}
+grid.arrange(b1,b2,b3,b4)
+grid.arrange(b5,b6,b7,b8)
+grid.arrange(b9,b10,b11)
+```
+
+```{r}
+b12 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO12)) + geom_boxplot(fill="limegreen") + theme_classic() + xlab("Riqueza")
+b13 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO13)) + geom_boxplot(fill="olivedrab") + theme_classic() + xlab("Riqueza")
+b14 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO14)) + geom_boxplot(fill="olivedrab1") + theme_classic() + xlab("Riqueza")
+b15 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO15)) + geom_boxplot(fill="olivedrab2") + theme_classic() + xlab("Riqueza")
+b16 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO16)) + geom_boxplot(fill="olivedrab3") + theme_classic() + xlab("Riqueza")
+b17 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO17)) + geom_boxplot(fill="olivedrab4") + theme_classic() + xlab("Riqueza")
+b18 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO18)) + geom_boxplot(fill="yellowgreen") + theme_classic() + xlab("Riqueza")
+b19 <- ggplot(cuant, aes(x=factor(riqueza), y=BIO19)) + geom_boxplot(fill="olivedrab") + theme_classic() + xlab("Riqueza")
+```
+
+```{r}
+grid.arrange(b12,b13,b14,b15)
+grid.arrange(b16,b17,b18,b19)
+```
+
+## Análisis de Correlaciones
+
+```{r}
+A<-cor(cuant, method="spearman")
+A
+```
+
+```{r}
+library(corrplot)
+corrplot::corrplot(A) #azul correlacion positiva, rojo correlacion negativa
+```
+
+```{r}
+corrplot::corrplot(A, method="number", number.cex=0.45)
+```
+
+Las variables BIO12, BIO13, BIO14, BIO16, BIO17, BIO18, BIO19, correspondientes a las variables climáticas de precipitación, orilla y BIO6 muestran correlaciones positivas (azul) con la riqueza.
+
+Las variables BIO1, BIO2, BIO5, BIO7, BIO8, BIO9, BIO10, BIO15, correspondientes a las variables climáticas de temperaturas, y altitud muestran correlaciones negativas con la riqueza.
+
+Las variables BIO3, BIO4, BIO11 y *footprint* no son significativas a priori.
+
+
+# ANÁLISIS DE COMPONENTES PRINCIPALES (ACP)
+
+```{r}
+library(FactoMineR)
+library(factoextra)
+```
+
+```{r}
+bio<-dplyr::select(cuant,-orilla,-footprint,-altitud,-riqueza)
+```
+
+## Estandarización de variables (escalado)
+
+```{r}
+PCA<-PCA(bio, scale.unit = TRUE)
+print(PCA)
+```
+
+## Visualización e interpretación
+
+**Valores propios/varianzas/eigenvalues**
+
+Extraigo los *eigenvalues* de los componentes principales:
+
+```{r}
+eigenvalue<-get_eigenvalue(PCA)
+```
+
+```{r}
+#exportar tabla a word 
+eigenvalue %>%
+
+            kbl(caption = "") %>%
+
+            kable_classic(full_width = F, html_font = "Arial")
+```
+
+
+Los *eigenvalues* miden la cantidad de variación retenida por cada componente principal. Las primeras PC corresponden a las direcciones con la máxima cantidad de variación en el conjunto de datos.
+
+La proporción de variación explicada por cada valor propio se da en la segunda columna. El porcentaje acumulado explicado se obtiene sumando las sucesivas proporciones de variación explicadas para obtener el total acumulado. 
+
+Alrededor del 76'45% de la variación se explica por los dos primeros valores propios juntos.
+
+Los valores propios se pueden utilizar para determinar el número de componentes principales a retener después de PCA (Kaiser 1961). Un eigenvalue > 1 indica que las PC explican más varianza que la explicada por una de las variables originales en los datos estandarizados. Esto se usa como valor umbral o punto de corte (cuando los datos están estandarizados) para el cual se retienen las PC, por eso solo me quedaré con las 4 primeras.
+
+*Gráfico de sedimentación*:
+
+```{r}
+fviz_eig(PCA, addlabels = TRUE, ylim = c(0, 50)) #visualizacion valores propios/eigenvalues
+```
+
+El 93'8% de la información (varianzas) contenida en los datos es retenida por los primeros cuatro componentes principales.
+
+
+## Gráfico de variables
+
+**Resultados**:
+
+```{r}
+var <- get_pca_var(PCA)
+var
+```
+
+**Factor coordinates of the variables based on correlations**
+
+**var$coord**: coordenadas de variables para crear un diagrama de dispersión.
+
+```{r}
+# Coordinates
+var$coord
+coordinatesvariables<-as.data.frame(var$coord)
+```
+
+**Calidad de representación**
+
+**var$cos2**: representa la calidad de representación de las variables en el mapa de factores. Se calcula como las coordenadas al cuadrado: var.cos2 = var.coord * var.coord.
+
+```{r}
+library(corrplot)
+var$cos2
+corrplot(var$cos2, is.corr=TRUE)
+```
+
++ Un cos2 alto indica una buena representación de la variable en el componente principal. En este caso la variable se posiciona cerca de la circunferencia del círculo de correlación.
+
++ Un cos2 bajo indica que la variable no está perfectamente representada por las PC. En este caso la variable está cerca del centro del círculo.
+
+Para algunas de las variables, es posible que se requieran más de 2 componentes para representar perfectamente los datos. En este caso las variables se posicionan dentro del círculo de correlaciones.
+
+**Gráfico de correlación de variables:**
+
+```{r}
+fviz_pca_var(PCA, col.var = "cos2",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"), 
+             repel = TRUE 
+             )
+```
+
++ Las variables con valores bajos de cos2 se colorean en cian.
+
++ Las variables con valores medios de cos2 se colorean en amarillo.
+
++ Las variables con valores altos de cos2 se colorean en rojo.
+
+Las variables *correlacionadas positivamente* se agrupan. Las variables *correlacionadas negativamente* se colocan en lados opuestos del origen del gráfico (cuadrantes opuestos).
+
+La distancia entre las variables y el origen mide la calidad de las variables en el mapa de factores. Las variables que están alejadas del origen están bien representadas en el mapa de factores.
+
+
+## Aportes de variables a PCs
+
+**var$contrib**: contiene las contribuciones (en porcentaje) de las variables a los componentes principales. La contribución de una variable (var) a un componente principal dado es (en porcentaje) : (var.cos2 * 100) / (cos2 total del componente).
+
+```{r}
+# Contribuciones a los componentes principales
+contribucion<-var$contrib
+```
+
+```{r}
+library(knitr)
+contribucion %>%
+
+            kbl(caption = "") %>%
+
+            kable_classic(full_width = F, html_font = "Arial")
+```
+
+ Las variables que están correlacionadas con PC1 (o Dim.1) y PC2 (o Dim.2) son las más importantes para explicar la variabilidad en el conjunto de datos. Las variables que no se correlacionan con ningún PC o se correlacionan con las últimas dimensiones son variables de baja contribución y podrían eliminarse para simplificar el análisis general.
+
+```{r}
+fviz_contrib(PCA, choice = "var", axes = 1:2, top = 19)
+```
+
+La línea discontinua roja en el gráfico anterior indica la contribución promedio esperada. 
+
+```{r}
+fviz_pca_var(PCA, col.var = "contrib",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07")
+             )
+```
+
+
+
+```{r}
+# Coordinates of individuals
+ind <- get_pca_ind(PCA)
+ind
+```
+
+La siguiente matriz es crucial para continuar los análisis, representa el valor de cada factor para cada caso. 
+
+```{r}
+# Coordinates filas
+coordinatescases<-as.data.frame(ind$coord)
+#elimino la componente 5, solo me quedo con las 4 primeras por el valor del eigenvalue
+coordinatescases<-dplyr::select(coordinatescases,-Dim.5)
+```
+
+```{r}
+# Calidad filas
+head(ind$cos2)
+```
+
+```{r}
+# Contributions filas
+head(ind$contrib)
+```
+
+# MODELO LINEAL GENERALIZADO: DISTRIBUCION DE POISSON
+
+```{r}
+v1<-dplyr::select(anfibiosdef,etiquetas)
+v2<-dplyr::select(cuant,riqueza,orilla,altitud,footprint)
+v3<-cbind(v1,v2)
+data<-cbind(v3,coordinatescases) #base de datos para representacion mapa
+```
+
+```{r}
+dataglm<-cbind(v2,coordinatescases) #base de datos para modelo poisson
+```
+
+**Asunciones poisson** 
+
+media = varianza
+
+```{r}
+mean(dataglm$riqueza)
+var(dataglm$riqueza)
+```
+
+```{r}
+glm<-glm(riqueza~Dim.1+Dim.2+Dim.3+Dim.4+footprint+orilla+altitud, data=dataglm,
+         family=poisson(link = "log"))
+
+summary(glm)
+```
+
+**Cálculo sobredispersión del modelo:**
+
++ Forma 1:
+
+```{r}
+#Sobredispersión
+glm$deviance/glm$df.residual
+```
+
++ Forma 2:
+
+```{r}
+library(AER)
+require(lmtest)
+dispersiontest(glm)
+```
+
+La sobredispersión es superior a 1, aun así, es un valor pequeño por lo que el modelo podría darse por bueno. 
+
+**Pruebas Bondad de ajuste: devianza y chi-cuadrado**
+
++ **Devianza** 
+
++ Forma 1:
+
+Devianza = (Devianza modelo nulo - Devianza residual /devianza modelo nulo) * 100
+
+```{r}
+devianza<-((7231.9-6189)/7231.9)*100
+devianza
+```
++ Forma 2:
+
+```{r}
+d2 <- round(100*(glm$null.deviance-glm$deviance)/glm$null.deviance, 2)
+d2
+```
+
+El modelo explica el 14'42% de la variabilidad. 
+
++ **Prueba de Bondad de Ajuste: Chi-cuadrado**
+
++ Forma 1: 
+
+```{r}
+library(MASS)
+step(glm, test = "Chisq")
+```
+
++ Forma 2:
+
+```{r}
+glm.null<-glm(riqueza~1,family = poisson(link = "log"), data = dataglm)
+anova(glm.null,glm,test="Chi")
+```
+
+El test $X^2$ es significativo, el ajuste del modelo es bueno.
+
+La desviación nula muestra qué tan bien se predice la variable de respuesta mediante un modelo que incluye solo el intercepto  mientras que el residual incluye variables independientes. Arriba, podemos ver que la suma de 7 (4613-4606 = 7) variables independientes disminuyó la desviación de 7102.5 a 6053.3 Una mayor diferencia de valores significa un mal ajuste.
+
+**Análisis residuos**
+
+Exploración de los residuos del modelo
+
+- normalidad, usando los residuos de devianza (no en la escala original de la respuesta)
+
+- homocedasticidad de los residuos a través de las predicciones del modelo (aplicando la transformación de la link function)
+
+-existencia de datos influyentes y perdidos con la distancia de Cook y Leverage
+
+```{r}
+par(mfrow=c(2,2))
+plot(glm)
+```
+
+**Normalidad**
+
+```{r}
+shapiro.test(residuals(glm, type="deviance"))
+```
+
+Significativo, aprobamos hipótesis normalidad.
+
+
+Para tener un error estándar más correcto, podemos usar un modelo cuasi-poisson:
+
+```{r}
+glmquasi<-glm(riqueza~Dim.1+Dim.2+Dim.3+Dim.4+footprint+orilla+altitud, data=dataglm,
+         family=quasipoisson(link = "log"))
+summary(glmquasi)
+```
+
+```{r}
+#Sobredispersión
+glmquasi$deviance/glmquasi$df.residual
+```
+
+La dispersión del modelo empleando la quasipoisson no varía mucho.
+Comparamos cual de los dos modelos es mejor:
+
+```{r}
+library(arm)
+#extraer coeficientes modelo poisson
+coef1 = coef(glm)
+
+# extraer coeficientes modelo quasipoisson
+coef2 = coef(glmquasi)
+
+# extraer errores estandar modelo poisson
+se.coef1 = se.coef(glm)
+
+# extraer errores estandar modelo quasipoisson
+se.coef2 = se.coef(glmquasi)
+
+# cbind() para unir los valores en un data frame
+modelos<-cbind(coef1, se.coef1, coef2, se.coef2, exponent = exp(coef1))
+```
+
+```{r}
+modelos %>%
+
+            kbl(caption = "") %>%
+
+            kable_classic(full_width = F, html_font = "Arial")
+```
+
+Los coeficientes son los mismos pero los errores estandar varían.
+
+Obtenemos los coeficientes del modelo con los que crearemos el mapa.
+
+```{r}
+coeficientes<-coef(glm)
+```
+
+```{r}
+coeficientes %>%
+
+            kbl(caption = "") %>%
+
+            kable_classic(full_width = F, html_font = "Arial")
+```
+
+
+
+# MACHINE LEARNING PARA SELECCIONAR LAS VARIABLES CON MÁS INFLUENCIA EN LA RIQUEZA DE ESPECIES: RANDOM FOREST
+
+## Random Forest con tres clases
+
+### Carga de datos
+
+```{r}
+library(readxl)
+machine <- read_excel("machine.xlsx")
+library(tidyverse)
+machine<-drop_na(machine)
+attach(machine)
+```
+
+### Categorizacion en tres clases 
+
+Se decidió categorizar la variable riqueza puesto que no nos interesa que el modelo prediga la riqueza exacta, lo que se quiere es averiguar qué variables tienen más importancia en la riqueza de anfibios. Se estblecen tres clases: riqueza baja (0-3 especies por cuadricula UTM), riqueza media (4-6) y riqueza alta (7-12).
+
+```{r}
+summary(machine[,"riqueza"])
+machine[,"riqueza"] <- cut(machine$riqueza, breaks = 3, labels = c("1", "2", "3"))
+head(machine)
+machine$riqueza<-as.factor(machine$riqueza)
+str(machine)
+```
+
+
+### Obtención conjuntos train y test
+
+```{r}
+set.seed(params$valor.seed) #semilla de aleatorización
+train <- sample(nrow(machine),round(nrow(machine)*params$p.train,0))
+#train
+m_train<-machine[train,]
+#test
+m_test<-machine[-train,]
+```
+
+*Test* tiene 1405 observaciones y *Train* 3278 observaciones, las particiones son correctas y aleatorias.
+
+### Entrenamiento modelo
+
+```{r}
+library(randomForest)
+set.seed(123)
+rf <- randomForest::randomForest(riqueza~., data=m_train, proximity=TRUE) 
+print(rf)
+```
+
+```{r}
+plot(rf)
+legend("topright", colnames(rf$err.rate),col=1:4,cex=0.8,fill=1:4)
+```
+
+Matriz de confusión:
+
+```{r}
+rf$confusion
+```
+
+### Predicciones
+
+```{r, include=TRUE, message=TRUE, warning=FALSE}
+rf1.pred = predict(rf, m_test, type="class")
+```
+
+```{r, include=TRUE, message=TRUE, warning=FALSE}
+tabla_rf1 <- table(m_test$riqueza, rf1.pred)
+caret::confusionMatrix(tabla_rf1)
+```
+
+```{r}
+# % correcto
+100 * sum(diag(tabla_rf1)) / sum(tabla_rf1)
+```
+
+### Selección de las variables más importantes del modelo
+
+```{r}
+rf$importance
+varImpPlot(rf)
+```
+
+```{r, include=TRUE, message=TRUE, warning=FALSE}
+library(tidyr)
+# Poner variables importantes como data frame
+imp = as.data.frame(rf$importance)
+imp = cbind(vars=rownames(imp), imp)
+imp = imp[order(imp$MeanDecreaseGini),]
+imp$vars = factor(imp$vars, levels=unique(imp$vars))
+
+#representación gráfica 1
+
+barplot(imp$MeanDecreaseGini, names.arg=imp$vars)
+
+
+imp %>% 
+  pivot_longer(cols=matches("Mean")) %>% 
+  ggplot(aes(value, vars)) +
+  geom_col() +
+  geom_text(aes(label=round(value), x=0.5*value), size=3, colour="white") +
+  facet_grid(. ~ name, scales="free_x") +
+  scale_x_continuous(expand=expansion(c(0,0.04))) +
+  theme_bw() +
+  theme(panel.grid.minor=element_blank(),
+        panel.grid.major=element_blank(),
+        axis.title=element_blank())
+```
+
+```{r, include=TRUE, message=TRUE, warning=FALSE}
+library(caret)
+#representación gráfica 2 
+
+#Conditional=True, ajusta las correlaciones entre predictores.
+i_scores <- varImp(rf, conditional=TRUE)
+
+#Recopilar nombres de filas en 'var' y convertirlos en factor 
+#para proporcionar el parámetro fill para el gráfico de barras.
+
+i_scores <- i_scores %>% tibble::rownames_to_column("var") 
+i_scores$var<- i_scores$var %>% as.factor()
+
+#Plot gráfico de barras para comparar variables
+i_bar <- ggplot(data = i_scores) + 
+  geom_bar(
+    stat = "identity",#it leaves the data without count and bin
+    mapping = aes(x = var, y=Overall, fill = var), 
+    show.legend = FALSE,
+    width = 1
+  ) + 
+  labs(x = NULL, y = NULL)
+i_bar + coord_polar() + theme_minimal()
+i_bar + coord_flip() + geom_hline(yintercept = 80, linetype="dotted", 
+                color = "black", size=1) 
+#dibujar linea en 80 (valor umbral establecido) para distinguir las variables con mas importancia en el modelo
+```
+
+Este es el código para la representación del árbol pero no se incluye porque la representación gráfica no es clara.
+
+```{r, include=TRUE, message=TRUE, warning=FALSE}
+#library(reprtree)
+#reprtree:::plot.getTree(rf)
+```
+
+## Random Forest con dos clases
+
+### Carga de datos
+
+```{r}
+#carga datos
+library(readxl)
+machine2 <- read_excel("machine.xlsx")
+library(tidyverse)
+machine2<-drop_na(machine2)
+attach(machine2)
+```
+
+### Categorización en dos clases
+
+Como el accuracy del anterior modelo no es muy bueno, probamos a categorizar en dos clases, la clase 1 (0-6) y la clase 2 (6-12).
+
+```{r}
+summary(machine2[,"riqueza"])
+machine2[,"riqueza"] <- cut(machine2$riqueza, breaks = 2, labels = c("1", "2"))
+head(machine2)
+machine2$riqueza<-as.factor(machine2$riqueza)
+str(machine2)
+```
+
+### Obtención conjuntos train y test
+
+```{r}
+set.seed(params$valor.seed) #semilla de aleatorización
+train2 <- sample(nrow(machine2),round(nrow(machine2)*params$p.train,0))
+#train
+m_train2<-machine2[train2,]
+#test
+m_test2<-machine2[-train2,]
+```
+
+*Test* tiene 1405 observaciones y *Train* 3278 observaciones, las particiones son correctas y aleatorias.
+
+### Entrenamiento modelo
+
+```{r}
+library(randomForest)
+set.seed(123)
+rf2 <- randomForest::randomForest(riqueza~., data=m_train2, proximity=TRUE) 
+print(rf2)
+```
+
+
+```{r}
+plot(rf2)
+legend("topright", colnames(rf2$err.rate),col=1:3,cex=0.8,fill=1:3)
+```
+
+Matriz de confusión:
+
+```{r}
+rf2$confusion
+```
+
+### Predicciones
+
+```{r, include=TRUE, message=TRUE, warning=FALSE}
+rf2.pred = predict(rf2, m_test2, type="class")
+```
+
+```{r, include=TRUE, message=TRUE, warning=FALSE}
+tabla_rf2 <- table(m_test2$riqueza, rf2.pred)
+caret::confusionMatrix(tabla_rf2)
+```
+
+```{r}
+# % correcto
+100 * sum(diag(tabla_rf2)) / sum(tabla_rf2)
+```
+
+
+### Selección de las variables más importantes en el modelo
+
+```{r}
+rf2$importance
+varImpPlot(rf2)
+```
+
+```{r, include=TRUE, message=TRUE, warning=FALSE}
+library(tidyr)
+# Poner variables importantes como data frame
+imp = as.data.frame(rf2$importance)
+imp = cbind(vars=rownames(imp), imp)
+imp = imp[order(imp$MeanDecreaseGini),]
+imp$vars = factor(imp$vars, levels=unique(imp$vars))
+
+#representación gráfica 1
+
+barplot(imp$MeanDecreaseGini, names.arg=imp$vars)
+
+
+imp %>% 
+  pivot_longer(cols=matches("Mean")) %>% 
+  ggplot(aes(value, vars)) +
+  geom_col() +
+  geom_text(aes(label=round(value), x=0.5*value), size=3, colour="white") +
+  facet_grid(. ~ name, scales="free_x") +
+  scale_x_continuous(expand=expansion(c(0,0.04))) +
+  theme_bw() +
+  theme(panel.grid.minor=element_blank(),
+        panel.grid.major=element_blank(),
+        axis.title=element_blank())
+```
+
+
+```{r, include=TRUE, message=TRUE, warning=FALSE}
+#representación gráfica 2 
+
+#Conditional=True, ajusta las correlaciones entre predictores.
+i_scores <- varImp(rf2, conditional=TRUE)
+
+#Recopilar nombres de filas en 'var' y convertirlos en factor 
+#para proporcionar el parámetro fill para el gráfico de barras.
+
+i_scores <- i_scores %>% tibble::rownames_to_column("var") 
+i_scores$var<- i_scores$var %>% as.factor()
+
+#Plot gráfico de barras para comparar variables
+i_bar <- ggplot(data = i_scores) + 
+  geom_bar(
+    stat = "identity",#it leaves the data without count and bin
+    mapping = aes(x = var, y=Overall, fill = var), 
+    show.legend = FALSE,
+    width = 1
+  ) + 
+  labs(x = NULL, y = NULL)
+i_bar + coord_polar() + theme_minimal()
+i_bar + coord_flip() + geom_hline(yintercept = 50, linetype="dotted", 
+                color = "black", size=1) 
+#dibujar linea en 50 (valor umbral establecido) para distinguir las variables con mas importancia en el modelo
+```
+
+## Random Forest con dos clases: separación por la mediana
+
+### Carga de datos
+
+```{r}
+library(readxl)
+machine <- read_excel("machine.xlsx")
+library(tidyverse)
+machine<-drop_na(machine)
+attach(machine)
+```
+
+### Categorizacion de la variable riqueza
+
+Se establecen dos clases a partir de la mediana para que las clases estén balanceadas, es decir, tengan aproximadamente el mismo número de observaciones. La mediana es una medida de localización central que se define como aquel valor que divide un conjunto de observaciones, ordenadas de menor a mayor, en dos partes con el mismo número de observaciones o como aquel valor que divide los datos en dos partes de igual probabilidad.
+
+```{r}
+summary(machine$riqueza)
+```
+
+Dicotomizo la variable riqueza por la mediana que es 3.
+
+```{r}
+machine[,"riqueza"] <- cut(machine$riqueza, breaks = c(0,3,13), labels = c("1", "2"))
+head(machine)
+machine$riqueza<-as.factor(machine$riqueza)
+str(machine)
+summary(machine[,"riqueza"])
+```
+
+En la clase 1 hay 2343 observaciones y en la clase 2, 2340; los datos están balanceados.
+
+### Obtención conjuntos train y test
+
+```{r}
+set.seed(params$valor.seed) #semilla de aleatorización
+train <- sample(nrow(machine),round(nrow(machine)*params$p.train,0))
+#train
+m_train<-machine[train,]
+#test
+m_test<-machine[-train,]
+```
+
+*Test* tiene 1405 observaciones y *Train* 3278 observaciones, las particiones son correctas y aleatorias.
+
+### Entrenamiento modelo
+
+```{r}
+library(randomForest)
+set.seed(123)
+rf <- randomForest::randomForest(riqueza~., data=m_train, proximity=TRUE) 
+print(rf)
+```
+
+```{r}
+plot(rf)
+legend("topright", colnames(rf$err.rate),col=1:4,cex=0.8,fill=1:4)
+```
+
+Matriz de confusión:
+
+```{r}
+rf$confusion
+```
+
+### Predicciones
+
+```{r, include=TRUE, message=TRUE, warning=FALSE}
+rf1.pred = predict(rf, m_test, type="class")
+```
+
+```{r, include=TRUE, message=TRUE, warning=FALSE}
+tabla_rf1 <- table(m_test$riqueza, rf1.pred)
+caret::confusionMatrix(tabla_rf1)
+```
+
+```{r}
+# % correcto
+100 * sum(diag(tabla_rf1)) / sum(tabla_rf1)
+```
+
+### Selección de las variables más importantes en el modelo
+
+```{r}
+rf$importance
+varImpPlot(rf)
+```
+
+
+```{r, include=TRUE, message=TRUE, warning=FALSE}
+library(tidyr)
+# Poner variables importantes como data frame
+imp = as.data.frame(rf$importance)
+imp = cbind(vars=rownames(imp), imp)
+imp = imp[order(imp$MeanDecreaseGini),]
+imp$vars = factor(imp$vars, levels=unique(imp$vars))
+
+#representación gráfica 1
+
+imp %>% 
+  pivot_longer(cols=matches("Mean")) %>% 
+  ggplot(aes(value, vars)) +
+  geom_col() +
+  geom_text(aes(label=round(value), x=0.5*value), size=3, colour="white") +
+  facet_grid(. ~ name, scales="free_x") +
+  scale_x_continuous(expand=expansion(c(0,0.04))) +
+  theme_bw() +
+  theme(panel.grid.minor=element_blank(),
+        panel.grid.major=element_blank(),
+        axis.title=element_blank())
+```
+
+```{r, include=TRUE, message=TRUE, warning=FALSE}
+#representación gráfica 2 y 3 
+
+#Conditional=True, ajusta las correlaciones entre predictores.
+i_scores <- varImp(rf, conditional=TRUE)
+
+#Recopilar nombres de filas en 'var' y convertirlos en factor 
+#para proporcionar el parámetro fill para el gráfico de barras.
+
+i_scores <- i_scores %>% tibble::rownames_to_column("var") 
+i_scores$var<- i_scores$var %>% as.factor()
+
+#Plot gráfico de barras para comparar variables
+i_bar <- ggplot(data = i_scores) + 
+  geom_bar(
+    stat = "identity",#it leaves the data without count and bin
+    mapping = aes(x = var, y=Overall, fill = var), 
+    show.legend = FALSE,
+    width = 1
+  ) + 
+  labs(x = NULL, y = NULL)
+i_bar + coord_polar() + theme_minimal()
+i_bar + coord_flip() + geom_hline(yintercept = 80, linetype="dotted", 
+                color = "black", size=1) 
+#dibujar linea en 80 (valor umbral establecido) para distinguir las variables con mas importancia en el modelo
+```
+
+## Pruebas Machine Learning
+
+Se probaron tres algoritmos distintos: árboles de decisión, k-vecinos más cercanos y random forest, eligiéndose finalmente random forest por su mejor precisión y por cumplir nuestro objetivo de seleccionar las variables más importantes.
+
+### Arboles de Decision
+
+**Carga datos**
+
+```{r}
+library(readxl)
+machine2 <- read_excel("machine.xlsx")
+library(tidyverse)
+machine2<-drop_na(machine2)
+attach(machine2)
+```
+
+*Categorizacion*
+
+```{r}
+summary(machine2[,"riqueza"])
+machine2[,"riqueza"] <- cut(machine2$riqueza, breaks = 2, labels = c("1", "2"))
+head(machine2)
+machine2$riqueza<-as.factor(machine2$riqueza)
+str(machine2)
+```
+
+*División de los datos en train y test*
+
+```{r}
+set.seed(params$valor.seed) #semilla de aleatorización
+train <- sample(nrow(machine2),round(nrow(machine2)*params$p.train,0))
+#train
+m_train<-machine2[train,]
+#test
+m_test<-machine2[-train,]
+```
+
+*Decision tree*
+
+```{r, include=TRUE, message=TRUE, warning=FALSE}
+library(rpart)
+library(rpart.plot)
+fit <- rpart(riqueza~., data = m_train, method = 'class')
+rpart.plot(fit)
+```
+
+```{r, include=TRUE, message=TRUE, warning=FALSE}
+predict_ct <-predict(fit, m_train, type = 'class')
+```
+
+```{r, include=TRUE, message=TRUE, warning=FALSE}
+predict_test <-predict(fit, m_test, type = 'class')
+table_mat <- table(m_test$riqueza, predict_test)
+caret::confusionMatrix(table_mat)
+```
+
+```{r, include=TRUE, message=TRUE, warning=FALSE}
+fit$variable.importance[order(fit$variable.importance)]
+```
+
+### k-NN (k nearest neighbor)
+
+Entrenamiento.
+
+```{r, include=TRUE, message=TRUE}
+library(class)
+set.seed(123) 
+
+knn_class10 <- knn(train = m_train[,-1], test = m_test[,-1], cl = m_train$riqueza, k = 10)
+knn_class15 <- knn(train = m_train[,-1], test = m_test[,-1], cl = m_train$riqueza, k = 15)
+knn_class20 <- knn(train = m_train[,-1], test = m_test[,-1], cl = m_train$riqueza, k = 20)
+knn_class25 <- knn(train = m_train[,-1], test = m_test[,-1], cl = m_train$riqueza, k = 25)
+knn_class30 <- knn(train = m_train[,-1], test = m_test[,-1], cl = m_train$riqueza, k = 30)
+knn_class40 <- knn(train = m_train[,-1], test = m_test[,-1], cl = m_train$riqueza, k = 40)
+```
+
+Matrices de confusión.
+
+```{r, include=TRUE, message=TRUE}
+library(gmodels)
+CrossTable(x = m_test$riqueza, y = knn_class10, prop.chisq=FALSE)
+CrossTable(x = m_test$riqueza, y = knn_class15, prop.chisq=FALSE)
+CrossTable(x = m_test$riqueza, y = knn_class20, prop.chisq=FALSE)
+CrossTable(x = m_test$riqueza, y = knn_class25, prop.chisq=FALSE)
+CrossTable(x = m_test$riqueza, y = knn_class30, prop.chisq=FALSE)
+CrossTable(x = m_test$riqueza, y = knn_class40, prop.chisq=FALSE)
+```
+
+```{r, include=TRUE, message=TRUE}
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+accuracy(table(knn_class10,m_test$riqueza))
+accuracy(table(knn_class15,m_test$riqueza))
+accuracy(table(knn_class20,m_test$riqueza))
+accuracy(table(knn_class25,m_test$riqueza))
+accuracy(table(knn_class30,m_test$riqueza))
+accuracy(table(knn_class40,m_test$riqueza)) 
+```
+
+## Optimización de los Hiperparámetros
+
+Una vez elegida la categorización con mejor accuracy, probamos a mejorar los hiperparámetros.
+
+### Carga datos
+
+```{r}
+library(readxl)
+datos <- read_excel("machine.xlsx")
+library(tidyverse)
+datos<-drop_na(datos)
+attach(datos)
+```
+
+### Categorizacion
+
+```{r}
+datos[,"riqueza"] <- cut(datos$riqueza, breaks = 2, labels = c("1", "2"))
+head(datos)
+datos$riqueza<-as.factor(datos$riqueza)
+str(datos)
+```
+
+### División de los datos en train y test
+
+```{r}
+set.seed(params$valor.seed) #semilla de aleatorización
+train <- sample(nrow(datos),round(nrow(datos)*params$p.train,0))
+#train
+datos_train<-datos[train,]
+#test
+datos_test<-datos[-train,]
+```
+
+*Train* está formado por el 70% de la base de datos, 3278 observaciones, y test por el 30% restante., 1405 observaciones. 
+
+
+### Creación y entrenamiento del modelo
+
+```{r}
+library(ranger)
+set.seed(123)
+modelo  <- ranger(
+            formula   = riqueza ~ .,
+            data      = datos_train,
+            num.trees = 10,
+            seed      = 123
+           )
+
+print(modelo)
+```
+
+### Predicción y evaluación del modelo
+
+```{r}
+predicciones <- predict(
+                  modelo,
+                  data = datos_test
+                )
+
+predicciones <- predicciones$predictions
+```
+
+### Optimización de hiperparámetros
+
+Añadir árboles en Random Forest mejora el resultado. No se produce overfitting por exceso de árboles sin embargo, añadir árboles una vez que la mejora se estabiliza es una pérdida de recursos computacionales.
+
+**Número de árboles**
+
++ **Validación empleando el Out-of-Bag error (root mean squared error)**
+
+```{r}
+# Valores evaluados
+num_trees_range <- seq(1, 400, 20)
+
+# Bucle para entrenar un modelo con cada valor de num_trees y extraer su error
+# de entrenamiento y de Out-of-Bag.
+
+train_errors <- rep(NA, times = length(num_trees_range))
+oob_errors   <- rep(NA, times = length(num_trees_range))
+
+for (i in seq_along(num_trees_range)){
+  modelo  <- ranger(
+               formula   = riqueza ~ .,
+               data      = datos_train,
+               num.trees = num_trees_range[i],
+               oob.error = TRUE,
+               seed      = 123
+             )
+  
+  predicciones_train <- predict(
+                          modelo,
+                          data = datos_train
+                        )
+  predicciones_train <- predicciones_train$predictions
+  
+  train_error <- mean((predicciones_train - datos_train$riqueza)^2)
+  oob_error   <- modelo$prediction.error
+  
+  train_errors[i] <- sqrt(train_error)
+  oob_errors[i]   <- sqrt(oob_error)
+  
+}
+
+# Gráfico con la evolución de los errores
+df_resulados <- data.frame(n_arboles = num_trees_range, train_errors, oob_errors)
+ggplot(data = df_resulados) +
+  geom_line(aes(x = num_trees_range, y = train_errors, color = "train rmse")) + 
+  geom_line(aes(x = num_trees_range, y = oob_errors, color = "oob rmse")) +
+  geom_vline(xintercept = num_trees_range[which.min(oob_errors)],
+             color = "firebrick",
+             linetype = "dashed") +
+  labs(
+    title = "Evolución del out-of-bag-error vs número árboles",
+    x     = "número de árboles",
+    y     = "out-of-bag-error (rmse)",
+    color = ""
+  ) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+```
+
+```{r}
+paste("Valor óptimo de num.trees:", num_trees_range[which.min(oob_errors)])
+```
+
+**mtry**
+
+El valor de mtry es uno de los hiperparámetros más importantes de random forest, ya que es el que permite controlar cuánto se decorrelacionan los árboles entre sí.
+
++ **Validación empleando el Out-of-Bag error (root mean squared error)**
+
+```{r}
+# Valores evaluados
+mtry_range <- seq(1, ncol(datos_train)-1)
+
+# Bucle para entrenar un modelo con cada valor de mtry y extraer su error
+# de entrenamiento y de Out-of-Bag.
+
+train_errors <- rep(NA, times = length(mtry_range))
+oob_errors   <- rep(NA, times = length(mtry_range))
+
+for (i in seq_along(mtry_range)){
+  modelo  <- ranger(
+               formula   = riqueza ~ .,
+               data      = datos_train,
+               num.trees = 50,
+               mtry      = mtry_range[i],
+               oob.error = TRUE,
+               seed      = 123
+             )
+  
+  predicciones_train <- predict(
+                          modelo,
+                          data = datos_train
+                        )
+  predicciones_train <- predicciones_train$predictions
+  
+  train_error <- mean((predicciones_train - datos_train$riqueza)^2)
+  oob_error   <- modelo$prediction.error
+  
+  train_errors[i] <- sqrt(train_error)
+  oob_errors[i]   <- sqrt(oob_error)
+  
+}
+
+# Gráfico con la evolución de los errores
+df_resulados <- data.frame(mtry = mtry_range, train_errors, oob_errors)
+ggplot(data = df_resulados) +
+  geom_line(aes(x = mtry_range, y = train_errors, color = "train rmse")) + 
+  geom_line(aes(x = mtry_range, y = oob_errors, color = "oob rmse")) +
+  geom_vline(xintercept =  mtry_range[which.min(oob_errors)],
+             color = "firebrick",
+             linetype = "dashed") +
+  labs(
+    title = "Evolución del out-of-bag-error vs mtry",
+    x     = "mtry",
+    y     = "out-of-bag-error (rmse)",
+    color = ""
+  ) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+```
+
+```{r}
+paste("Valor óptimo de mtry:", mtry_range[which.min(oob_errors)])
+```
+
+### Grid search
+
+Aunque el análisis individual de los hiperparámetros es útil para entender su impacto en el modelo e identificar rangos de interés pero como cada hiperparámetro interacciona con los demás hay que recurrir a grid search o random search para analizar varias combinaciones de hiperparámetros. 
+
+
++ **Grid Search basado en out-of-bag error**
+
+```{r}
+# Grid de hiperparámetros evaluados
+# ==============================================================================
+param_grid = expand_grid(
+                'num_trees' = c(50, 100, 500, 1000, 5000),
+                'mtry'      = c(3, 5, 7, 17, ncol(datos_train)-1),
+                'max_depth' = c(1, 3, 10, 20)
+                
+             )
+
+# Loop para ajustar un modelo con cada combinación de hiperparámetros
+# ==============================================================================
+
+oob_error = rep(NA, nrow(param_grid))
+
+for(i in 1:nrow(param_grid)){
+
+  modelo <- ranger(
+              formula   = riqueza ~ .,
+              data      = datos_train, 
+              num.trees = param_grid$num_trees[i],
+              mtry      = param_grid$mtry[i],
+              max.depth = param_grid$max_depth[i],
+              seed      = 123
+            )
+
+ oob_error[i] <- sqrt(modelo$prediction.error)
+}
+
+
+# Resultados
+# ==============================================================================
+resultados <- param_grid
+resultados$oob_error <- oob_error
+resultados <- resultados %>% arrange(oob_error)
+# Mejores hiperparámetros por out-of-bag error
+# ==============================================================================
+head(resultados, 1)
+```
+
+HIPERPARÁMETROS OPTIMIZADOS: ntree=5000, mtry=17, max_depth=20, OOB=0'364284
+
+
+
+
+
+
+
